@@ -43,6 +43,17 @@ FinTrack is a personal finance management application developed with Flutter, he
 - Dark/Light theme
 - User-friendly and easy-to-use interface
 
+## 📱 Screenshots
+
+<div align="center">
+  <img src="assets/images/Screenshot_20250706-101322.jpg" alt="Home Screen" width="200"/>
+  <img src="assets/images/Screenshot_20250706-101332.jpg" alt="Transaction Management" width="200"/>
+  <img src="assets/images/Screenshot_20250706-101342.jpg" alt="Charts and Statistics" width="200"/>
+  <img src="assets/images/Screenshot_20250706-101443.jpg" alt="Savings Goals" width="200"/>
+  <img src="assets/images/Screenshot_20250706-101636.jpg" alt="Book Management" width="200"/>
+  <img src="assets/images/Screenshot_20250706-101649.jpg" alt="Settings and More" width="200"/>
+</div>
+
 ## 🛠️ Technologies Used
 
 - **Framework**: Flutter 3.2.3+

@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.TuanNgoc.fintrack">
     <!-- Quyền kết nối mạng - cần thiết cho background service -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Quyền đánh thức thiết bị - cho phép task chạy khi thiết bị đang ngủ -->
@@ -11,9 +12,10 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     
     <application
-        android:label="Fintrack"
+        android:label="FinTracker"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:targetSdkVersion="34">
         <activity
             android:name=".MainActivity"
             android:exported="true"

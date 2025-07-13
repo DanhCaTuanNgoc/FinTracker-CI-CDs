@@ -89,7 +89,7 @@ class MyApp extends ConsumerWidget {
               textScaler: const TextScaler.linear(1.0)), // Font chữ của thiết bị không ảnh hưởng đến ứng dụng
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Fintrack',
+            title: 'FinTracker',
             locale: currentLocale,
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: const [

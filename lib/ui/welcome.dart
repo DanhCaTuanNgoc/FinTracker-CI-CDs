@@ -212,7 +212,7 @@ class WelcomePage extends StatelessWidget {
                   SlidePageContent(
                     children: [
                       Text(
-                        'Fintrack',
+                        'FinTracker',
                         style: TextStyle(
                           fontSize: 32.sp,
                           fontWeight: FontWeight.bold,
@@ -997,7 +997,8 @@ class _CreateBookPageState extends State<CreateBookPage> {
                                 ),
                                 child: Icon(
                                   Icons.edit_note,
-                                  color: const Color.fromARGB(255, 255, 255, 255),
+                                  color:
+                                      const Color.fromARGB(255, 255, 255, 255),
                                   size: 16.w,
                                 ),
                               ),
