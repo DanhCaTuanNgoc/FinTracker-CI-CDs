@@ -161,21 +161,23 @@ deploy_playstore:
     - gem install fastlane -N
     - gem install bundler -N
   script:
-    # Setup fastlane supply cho Google Play
-    - mkdir -p fastlane
-    - echo "$PLAY_STORE_CREDENTIALS" > fastlane/play_store_credentials.json
-    # Upload AAB to Play Store using fastlane
+    # PLAY_STORE_CREDENTIALS là file variable, GitLab tự tạo file tạm
+    # $PLAY_STORE_CREDENTIALS chứa đường dẫn đến file đó
     - |
-      fastlane supply \
-        --aab build/app/outputs/bundle/release/app-release.aab \
-        --json_key fastlane/play_store_credentials.json \
-        --package_name com.TuanNgoc.fintrack \
-        --track internal \
-        --skip_upload_metadata \
-        --skip_upload_images \
-        --skip_upload_screenshots
-  after_script:
-    - rm -f fastlane/play_store_credentials.json
+      if [ -f "$PLAY_STORE_CREDENTIALS" ]; then
+        echo "Using service account credentials from GitLab variable"
+        fastlane supply \
+          --aab build/app/outputs/bundle/release/app-release.aab \
+          --json_key "$PLAY_STORE_CREDENTIALS" \
+          --package_name com.TuanNgoc.fintrack \
+          --track internal \
+          --skip_upload_metadata \
+          --skip_upload_images \
+          --skip_upload_screenshots
+      else
+        echo "ERROR: PLAY_STORE_CREDENTIALS file not found"
+        exit 1
+      fi
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       when: manual
