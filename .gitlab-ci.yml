@@ -4,8 +4,8 @@ stages:
   - deploy
 
 variables:
-  # Flutter 3.38.1 - compatible with Dart SDK ^3.7.0
-  FLUTTER_VERSION: "3.38.1"
+  # Flutter 3.29.0 - compatible with Dart SDK 3.7.0 and intl 0.19.0
+  FLUTTER_VERSION: "3.29.0"
   PUB_CACHE: "${CI_PROJECT_DIR}/.pub-cache"
   ANDROID_COMPILE_SDK: "34"
   ANDROID_BUILD_TOOLS: "34.0.0"
