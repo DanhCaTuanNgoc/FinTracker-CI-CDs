@@ -1,0 +1,179 @@
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  # Flutter 3.38.1 - compatible with Dart SDK ^3.7.0
+  FLUTTER_VERSION: "3.38.1"
+  PUB_CACHE: "${CI_PROJECT_DIR}/.pub-cache"
+  ANDROID_COMPILE_SDK: "34"
+  ANDROID_BUILD_TOOLS: "34.0.0"
+  
+  # These variables should be set in GitLab CI/CD Settings > Variables:
+  # KEYSTORE_BASE64 (Protected) - Base64 encoded keystore file
+  # KEYSTORE_PASSWORD (Protected, Masked) - Keystore password
+  # KEY_PASSWORD (Protected, Masked) - Key password
+  # KEY_ALIAS (Protected) - Key alias
+  # PLAY_STORE_CREDENTIALS (Optional, File) - For Play Store deployment
+  # FIREBASE_TOKEN (Optional, Protected, Masked) - For Firebase deployment
+
+# Global cache configuration
+cache: &global_cache
+  key: 
+    files:
+      - pubspec.lock
+    prefix: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .pub-cache/
+    - .dart_tool/
+  policy: pull-push
+
+# Template cho Flutter jobs
+.flutter_template: &flutter_template
+  image: ghcr.io/cirruslabs/flutter:${FLUTTER_VERSION}
+  cache: *global_cache
+  before_script:
+    - export PATH="$PATH:$PUB_CACHE/bin"
+    - flutter --version
+    - flutter pub get
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+  timeout: 15 minutes
+
+# =============================
+# TEST STAGE
+# =============================
+
+test:
+  <<: *flutter_template
+  stage: test
+  script:
+    - flutter analyze --no-fatal-infos --no-fatal-warnings
+    - flutter test --coverage --reporter expanded
+    # Generate coverage reports
+    - apt-get update && apt-get install -y lcov
+    - genhtml coverage/lcov.info -o coverage/html || true
+    # Try to convert to Cobertura format (optional)
+    - apt-get install -y python3-pip || true
+    - pip3 install lcov_cobertura || true
+    - lcov_cobertura coverage/lcov.info --output coverage/cobertura.xml || true
+  coverage: '/lines\.*: \d+\.\d+%/'
+  artifacts:
+    when: always
+    paths:
+      - coverage/
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura.xml
+    expire_in: 2 weeks
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+# Security & Dependency Check
+dependency_check:
+  <<: *flutter_template
+  stage: test
+  script:
+    - flutter pub outdated
+    - flutter pub upgrade --dry-run
+  allow_failure: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# Code quality analysis
+code_quality:
+  <<: *flutter_template
+  stage: test
+  script:
+    - flutter analyze --fatal-infos --fatal-warnings > analyze_report.txt 2>&1 || true
+    - cat analyze_report.txt
+  artifacts:
+    paths:
+      - analyze_report.txt
+    expire_in: 2 weeks
+  allow_failure: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# =============================
+# ANDROID BUILDS
+# =============================
+
+.android_build_template: &android_build
+  <<: *flutter_template
+  stage: build
+  cache:
+    <<: *global_cache
+    policy: pull
+  before_script:
+    - export PATH="$PATH:$PUB_CACHE/bin"
+    - flutter --version
+    - flutter pub get
+    # Setup signing keystore from GitLab CI/CD Variables (use variable names from project)
+    - echo "$KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
+    - echo "storePassword=$KEYSTORE_PASSWORD" > android/key.properties
+    - echo "keyPassword=$KEY_PASSWORD" >> android/key.properties
+    - echo "keyAlias=$KEY_ALIAS" >> android/key.properties
+    - echo "storeFile=upload-keystore.jks" >> android/key.properties
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_TAG'
+
+build_apk:
+  <<: *android_build
+  script:
+    - flutter build apk --release --split-per-abi
+  artifacts:
+    name: "apk-${CI_COMMIT_SHORT_SHA}"
+    paths:
+      - build/app/outputs/flutter-apk/*.apk
+    expire_in: 1 month
+
+build_aab:
+  <<: *android_build
+  script:
+    - flutter build appbundle --release
+  artifacts:
+    name: "aab-${CI_COMMIT_SHORT_SHA}"
+    paths:
+      - build/app/outputs/bundle/release/app-release.aab
+    expire_in: 1 month
+
+# =============================
+# IOS BUILD (requires macOS runner)
+# =============================
+
+build_ios:
+  image: ghcr.io/cirruslabs/flutter:${FLUTTER_VERSION}
+  stage: build
+  tags:
+    - macos
+  cache:
+    <<: *global_cache
+    policy: pull
+  before_script:
+    - export PATH="$PATH:$PUB_CACHE/bin"
+    - flutter --version
+    - flutter pub get
+    - cd ios && pod install && cd ..
+  script:
+    - flutter build ios --release --no-codesign
+  artifacts:
+    name: "ios-${CI_COMMIT_SHORT_SHA}"
+    paths:
+      - build/ios/iphoneos/Runner.app
+    expire_in: 1 month
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+    - if: '$CI_COMMIT_TAG'
+      when: manual
