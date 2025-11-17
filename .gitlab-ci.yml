@@ -149,6 +149,43 @@ build_aab:
     expire_in: 1 month
 
 # =============================
+# DEPLOY STAGE
+# =============================
+
+deploy_playstore:
+  stage: deploy
+  image: ruby:3.2
+  dependencies:
+    - build_aab
+  before_script:
+    - gem install fastlane -N
+    - gem install bundler -N
+  script:
+    # Setup fastlane supply cho Google Play
+    - mkdir -p fastlane
+    - echo "$PLAY_STORE_CREDENTIALS" > fastlane/play_store_credentials.json
+    # Upload AAB to Play Store using fastlane
+    - |
+      fastlane supply \
+        --aab build/app/outputs/bundle/release/app-release.aab \
+        --json_key fastlane/play_store_credentials.json \
+        --package_name com.TuanNgoc.fintrack \
+        --track internal \
+        --skip_upload_metadata \
+        --skip_upload_images \
+        --skip_upload_screenshots
+  after_script:
+    - rm -f fastlane/play_store_credentials.json
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+      when: on_success
+  environment:
+    name: production
+    url: https://play.google.com/console
+
+# =============================
 # IOS BUILD (requires macOS runner)
 # =============================
 
