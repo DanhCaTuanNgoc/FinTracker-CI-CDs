@@ -170,7 +170,7 @@ deploy_playstore:
           --aab build/app/outputs/bundle/release/app-release.aab \
           --json_key "$PLAY_STORE_CREDENTIALS" \
           --package_name com.TuanNgoc.fintrack \
-          --track internal \
+          --track production \
           --skip_upload_metadata \
           --skip_upload_images \
           --skip_upload_screenshots
